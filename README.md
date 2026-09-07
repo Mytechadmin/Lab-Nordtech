@@ -41,7 +41,6 @@ Principes retenus :
 
 ## Contenu du dépôt
 
-```text
 ├── packet-tracer/          # Maquette Cisco Packet Tracer
 ├── configs/
 │   ├── routers/            # Configurations des routeurs
