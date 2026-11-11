@@ -63,7 +63,7 @@ Simulation d’une infrastructure réseau d’entreprise en croissance comprenan
 ├── packet-tracer/
 │   └── NordTechLAB.pkt              # Maquette complète Cisco Packet Tracer
 ├── configs/
-│   ├── routers/                     # Configurations des 2 routeurs
+│   ├── routeurs/                     # Configurations des 2 routeurs
 │   │   ├── Routeur-Brest-1.txt
 │   │   └── Routeur-Lyon-1.txt
 │   └── switches/                    # Configurations des 2 switches
