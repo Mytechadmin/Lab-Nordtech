@@ -1,0 +1,280 @@
+!
+! ============================================================
+! Switch-Lyon-3 - Switch L3 Primary
+! Site : Lyon
+! Rôle : Root Primary STP + HSRP Active
+! ============================================================
+!
+
+hostname Switch-Lyon-3
+!
+no ip domain-lookup
+ip domain-name nordtech.local
+!
+enable secret 123Soleil!
+service password-encryption
+!
+banner motd #
+*-*-*-*-*-*-*-*-*-*-*-* SWITCH-LYON-3 *-*-*-*-*-*-*-*-*-*-*-*
+#
+!
+
+! ============================================================
+! 1. COMPTES ET AAA
+! ============================================================
+username admin privilege 15 secret 123Soleil!
+
+tacacs-server host 10.10.110.6
+tacacs-server key Cisco123
+
+aaa new-model
+aaa authentication login default group tacacs+ local
+aaa authorization exec default group tacacs+ local
+aaa authentication login CONSOLE_LOCAL local
+
+ip ssh version 2
+
+! ============================================================
+! 2. ROUTAGE ET SPANNING-TREE
+! ============================================================
+ip routing
+!
+spanning-tree mode rapid-pvst
+spanning-tree vlan 10,40,50,60,70,99,100,110 root primary
+
+! ============================================================
+! 3. VLANS
+! ============================================================
+vlan 10
+ name Direction
+vlan 40
+ name Support
+vlan 50
+ name Commercial
+vlan 60
+ name Production
+vlan 70
+ name Stagiaires
+vlan 99
+ name Management
+vlan 100
+ name SRV-FICHIERS
+vlan 110
+ name SRV-INFRA-AAA
+vlan 999
+ name Native_Unused
+
+! ============================================================
+! 4. SVI + HSRP (Active - Priorité 110)
+! ============================================================
+interface Vlan10
+ description Passerelle VLAN Direction
+ ip address 10.20.10.2 255.255.255.0
+ ip helper-address 10.20.110.5
+ standby version 2
+ standby 10 ip 10.20.10.1
+ standby 10 priority 110
+ standby 10 preempt
+ standby 10 track GigabitEthernet1/0/22
+ no shutdown
+!
+interface Vlan40
+ description Passerelle VLAN Support
+ ip address 10.20.40.2 255.255.255.0
+ ip helper-address 10.20.110.5
+ standby version 2
+ standby 40 ip 10.20.40.1
+ standby 40 priority 110
+ standby 40 preempt
+ standby 40 track GigabitEthernet1/0/22
+ no shutdown
+!
+interface Vlan50
+ description Passerelle VLAN Commercial
+ ip address 10.20.50.2 255.255.255.0
+ ip helper-address 10.20.110.5
+ standby version 2
+ standby 50 ip 10.20.50.1
+ standby 50 priority 110
+ standby 50 preempt
+ standby 50 track GigabitEthernet1/0/22
+ no shutdown
+!
+interface Vlan60
+ description Passerelle VLAN Production
+ ip address 10.20.60.2 255.255.255.0
+ ip helper-address 10.20.110.5
+ standby version 2
+ standby 60 ip 10.20.60.1
+ standby 60 priority 110
+ standby 60 preempt
+ standby 60 track GigabitEthernet1/0/22
+ no shutdown
+!
+interface Vlan70
+ description Passerelle VLAN Stagiaires
+ ip address 10.20.70.2 255.255.255.0
+ ip helper-address 10.20.110.5
+ standby version 2
+ standby 70 ip 10.20.70.1
+ standby 70 priority 110
+ standby 70 preempt
+ standby 70 track GigabitEthernet1/0/22
+ no shutdown
+!
+interface Vlan99
+ description Management
+ ip address 10.20.99.6 255.255.255.0
+ standby version 2
+ standby 99 ip 10.20.99.1
+ standby 99 priority 110
+ standby 99 preempt
+ standby 99 track GigabitEthernet1/0/22
+ no shutdown
+!
+interface Vlan100
+ description Passerelle VLAN Serveurs-Fichiers
+ ip address 10.20.100.2 255.255.255.0
+ standby version 2
+ standby 100 ip 10.20.100.1
+ standby 100 priority 110
+ standby 100 preempt
+ standby 100 track GigabitEthernet1/0/22
+ no shutdown
+!
+interface Vlan110
+ description Passerelle VLAN Serveurs-Infra-AAA
+ ip address 10.20.110.2 255.255.255.0
+ standby version 2
+ standby 110 ip 10.20.110.1
+ standby 110 priority 110
+ standby 110 preempt
+ standby 110 track GigabitEthernet1/0/22
+ no shutdown
+!
+
+! ============================================================
+! 5. LIENS INTER-SWITCH (Trunks + EtherChannel)
+! ============================================================
+interface GigabitEthernet1/0/1
+ description Vers-Switch-Lyon-1
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,40,50,60,70,99,100,110,999
+ ip dhcp snooping trust
+ no shutdown
+!
+interface GigabitEthernet1/0/24
+ description Vers-Switch-Lyon-2
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,40,50,60,70,99,100,110,999
+ ip dhcp snooping trust
+ no shutdown
+!
+interface range GigabitEthernet1/0/10 - 11
+ description LACP-Vers-Switch-Lyon-4
+ channel-protocol lacp
+ channel-group 1 mode active
+ no shutdown
+!
+interface Port-channel1
+ description EtherChannel-Vers-Switch-Lyon-4
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,40,50,60,70,99,100,110,999
+ ip dhcp snooping trust
+ no shutdown
+!
+
+! ============================================================
+! 6. LIENS ROUTÉS VERS LES ROUTEURS
+! ============================================================
+interface GigabitEthernet1/0/22
+ no switchport
+ description Vers-Lyon-R1-Principal
+ ip address 10.20.253.2 255.255.255.252
+ no shutdown
+!
+interface GigabitEthernet1/0/23
+ no switchport
+ description Vers-Lyon-R2-Secours
+ ip address 10.20.253.14 255.255.255.252
+ no shutdown
+!
+
+! ============================================================
+! 7. PORTS SERVEURS
+! ============================================================
+interface GigabitEthernet1/0/2
+ description Serveur-AD-LYON
+ switchport mode access
+ switchport access vlan 110
+ spanning-tree portfast
+ no shutdown
+!
+interface GigabitEthernet1/0/3
+ description Serveur-DHCP-LYON
+ switchport mode access
+ switchport access vlan 110
+ spanning-tree portfast
+ ip dhcp snooping trust
+ no shutdown
+!
+
+! ============================================================
+! 8. PORTS INUTILISÉS
+! ============================================================
+interface range GigabitEthernet1/0/7 - 9
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+!
+interface range GigabitEthernet1/0/12 - 21
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+!
+interface range GigabitEthernet1/1/1 - 4
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+!
+
+! ============================================================
+! 9. DHCP SNOOPING
+! ============================================================
+ip dhcp snooping
+ip dhcp snooping vlan 10,40,50,60,70,99,100,110
+
+! ============================================================
+! 10. ROUTES STATIQUES
+! ============================================================
+ip route 10.10.0.0 255.255.0.0 10.20.253.1 10
+ip route 10.10.0.0 255.255.0.0 10.20.253.13 20
+
+! ============================================================
+! 11. ACL DE GESTION
+! ============================================================
+ip access-list standard MGMT-ONLY
+ permit 10.20.99.0 0.0.0.255
+ permit 10.20.40.0 0.0.0.255
+ permit 10.10.40.0 0.0.0.255
+ permit 10.10.99.0 0.0.0.255
+!
+
+! ============================================================
+! 12. LIGNES D'ACCÈS
+! ============================================================
+line console 0
+ login authentication CONSOLE_LOCAL
+ exec-timeout 15 0
+ logging synchronous
+!
+line vty 0 15
+ login authentication default
+ transport input ssh
+ access-class MGMT-ONLY in
+ exec-timeout 15 0
+!
+end
