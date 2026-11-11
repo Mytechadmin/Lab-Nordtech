@@ -58,14 +58,14 @@ Simulation d’une infrastructure réseau d’entreprise en croissance comprenan
 ---
 
 ## Contenu du dépôt├── packet-tracer/
-│   └── NordTechLAB.pkt              # Maquette complète Cisco Packet Tracer
-├── configs/
-│   ├── routers/                     # Configurations des 4 routeurs
-│   └── switches/                    # Configurations des switches
-├── docs/
-│   ├── Plan_Adressage_NordTech.pdf  # Plan d’adressage détaillé
-│   └── captures/                    # Captures d’écran (topologie, show…)
-└── README.mdtext---
+NordTechLAB.pkt              # Maquette complète Cisco Packet Tracer
+configs/
+routers/                     # Configurations de 2 routeurs
+switches/                    # Configurations de 2 switches
+docs/
+Plan_Adressage_NordTech.pdf  # Plan d’adressage détaillé
+captures/                    # Captures d’écran (topologie, show…)
+README.mdtext---
 
 ## Topologie
 
