@@ -1,0 +1,149 @@
+!
+! Switch-Brest-1 - Switch d'accès
+! Site : Brest
+!
+
+hostname Switch-Brest-1
+!
+no ip domain-lookup
+ip domain-name nordtech.local
+!
+enable secret 123Soleil!
+service password-encryption
+!
+banner motd #
+*-*-*-*-*-*-*-*-*-*-*-*(SWITCH-BREST-1)*-*-*-*-*-*-*-*-*-*-*-*-*-*
+#
+!
+
+! ============================================================
+! 1. COMPTES ET AAA
+! ============================================================
+username admin privilege 15 secret 123Soleil!
+
+tacacs-server host 10.10.110.6
+tacacs-server key Cisco123
+
+aaa new-model
+aaa authentication login default group tacacs+ local
+aaa authorization exec default group tacacs+ local
+aaa authentication login CONSOLE_LOCAL local
+
+ip ssh version 2
+
+! ============================================================
+! 2. VLANS ET GESTION
+! ============================================================
+vlan 10
+ name Direction
+vlan 20
+ name Compta
+vlan 30
+ name RH
+vlan 70
+ name Stagiaires
+vlan 99
+ name Management
+vlan 999
+ name Native_Unused
+!
+interface Vlan99
+ description Management
+ ip address 10.10.99.4 255.255.255.0
+ no shutdown
+!
+ip default-gateway 10.10.99.1
+
+! ============================================================
+! 3. PORTS UTILISATEURS
+! ============================================================
+interface FastEthernet0/10
+ description Poste-Direction
+ switchport mode access
+ switchport access vlan 10
+ switchport port-security
+ switchport port-security maximum 2
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shutdown
+!
+interface FastEthernet0/11
+ description Poste-Compta
+ switchport mode access
+ switchport access vlan 20
+ switchport port-security
+ switchport port-security maximum 2
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shutdown
+!
+interface FastEthernet0/12
+ description Poste-RH
+ switchport mode access
+ switchport access vlan 30
+ switchport port-security
+ switchport port-security maximum 2
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ no shutdown
+!
+
+! ============================================================
+! 4. PORTS INUTILISÉS
+! ============================================================
+interface range FastEthernet0/1 - 9
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+!
+interface range FastEthernet0/13 - 24
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+!
+
+! ============================================================
+! 5. UPLINKS TRUNK VERS BREST-3
+! ============================================================
+spanning-tree mode rapid-pvst
+!
+interface range GigabitEthernet0/1 - 2
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,20,30,99,999
+ ip dhcp snooping trust
+ no shutdown
+!
+ip dhcp snooping
+ip dhcp snooping vlan 10,20,30
+
+! ============================================================
+! 6. ACL DE GESTION
+! ============================================================
+ip access-list standard MGMT-ONLY
+ permit 10.10.99.0 0.0.0.255
+ permit 10.10.40.0 0.0.0.255
+ permit 10.20.40.0 0.0.0.255
+!
+
+! ============================================================
+! 7. LIGNES D'ACCÈS
+! ============================================================
+line console 0
+ login authentication CONSOLE_LOCAL
+ exec-timeout 15 0
+ logging synchronous
+!
+line vty 0 15
+ login authentication default
+ transport input ssh
+ access-class MGMT-ONLY in
+ exec-timeout 15 0
+!
+end
